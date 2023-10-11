@@ -1,6 +1,6 @@
 module.exports = function(app){
 	//USUARIOS
-    app.set('port', process.env.PORT || 8000);
+    app.set('port', process.env.PORT || 8200);
     var dyntestusers = require('.././controllers/dyntestusers');
     app.get('/dyntestusers/getAll', dyntestusers.findAll);
     app.get('/dyntestusers/getUser/:id', dyntestusers.findById);

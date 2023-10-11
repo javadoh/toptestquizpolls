@@ -5,51 +5,53 @@ ExamReport = mongoose.model('ExamReportSchema');
 var ExamReportByUser = require('.././models/dyn_reports_by_users');
 
 //FUNCION DE ENCONTRAR TODOS LOS REPORTES EN LA APLICACION
-exports.findAllExamsReports = function(req, res){
+exports.findAllExamsReports = async function(req, res){
   console.log("### findAllExamsReports ###");
-  ExamReportByUser.find({},'id user_ppal_id exams_created', function(err, results){
-  if (err) return console.log(err);
-  return res.send(results);
-});
-
+  const ExamsReports = await ExamReportByUser.find({},'id user_ppal_id exams_created').catch((error) => {
+    return console.log(error);
+  });
+  return res.send(ExamsReports);
 };
 
 //FUNCION DE ENCONTRAR EXAMENES POR USER_ID DEL ENCUESTADOR O TITULAR DEL EXAMEN Y EXAM_ID EN LA APLICACION
-exports.findExamReportByUserExamId = function(req, res) {
+exports.findExamReportByUserExamId = async function(req, res) {
  var userPpalId = req.query.idUserPpal;
  var examDesignId = req.query.idExamDesign;
  
  console.log("UserPpalId: "+userPpalId+", exams_created: {$elemMatch : {exam_design_id: }: "+examDesignId);
 //'exams_created.exam_design_id':examDesignId
   //ExamReportByUser.find({'user_ppal_id':userPpalId,'exams_created': {$elemMatch:{'exam_design_id': {$eq:examDesignId}}}},'id user_ppal_id exams_created',function(err, result) {
-  ExamReportByUser.findOne({'user_ppal_id':userPpalId},{'exams_created': {$elemMatch:{'exam_design_id': examDesignId}}},'id user_ppal_id exams_created',function(err, result) {
-  if (err) return console.log(err);
-    return res.send(result);
+  const findExamReportByUserExamId = await ExamReportByUser.findOne({'user_ppal_id':userPpalId},{'exams_created': {$elemMatch:{'exam_design_id': examDesignId}}},'id user_ppal_id exams_created').catch((error) => {
+    return console.log(error);
   });
+    return res.send(findExamReportByUserExamId);
 };
 
 //FUNCION DE BUSQUEDA DE TODOS LOS EXAMENES Y REPORTES POR USUARIO ENCUESTADOR O TITULAR DEL EXAMEN
-exports.findExamReportByUser = function(req, res) {
+exports.findExamReportByUser = async function(req, res) {
  var userPpalId = req.query.userppalid;
  
-  ExamReportByUser.findOne({'user_ppal_id':userPpalId},'id user_ppal_id exam_design_id user_submitted_exam',function(err, result) {
+ const findExamReportByUser = await ExamReportByUser.findOne({'user_ppal_id':userPpalId},'id user_ppal_id exam_design_id user_submitted_exam').catch((error) => {
+  return console.log(error);
+  });
+    return res.send(findExamReportByUser);
+  /*const findExamReportByUser = await ExamReportByUser.findOne({'user_ppal_id':userPpalId},'id user_ppal_id exam_design_id user_submitted_exam').then((result, err) => { 
   if (err) return console.log(err);
     return res.send(result);
-  });
+  });*/
 };
 
 //FUNCION DE AGREGAR EXAMENES A LA APLICACION
-exports.addExamReport = function (req, res){
+exports.addExamReport = async function (req, res){
 //TEST CON CURL ---> curl -i -X POST -H 'Content-Type: application/json' -d '{"name": "Joe", "band": "Abita Boys", "instrument":"voice"}' http://localhost:3001/musicians
-	ExamReportByUser.create(req.body, function (err, result) {
-    if (err) return console.log(err);
-    return res.send(result);
+	const addExamReport = await ExamReportByUser.create(req.body).catch((error) => {
+    return console.log(error);
   });
-  
+    return res.send(addExamReport);
 };
 
 //FUNCION DE AGREGAR EXAMENES A LA APLICACION
-exports.updateExamReport = function (req, res){
+exports.updateExamReport = async function (req, res){
 
 var idUser = req.query.idUser;
 var idExam = req.query.idExam;
@@ -62,30 +64,24 @@ var flagExisteUsuario = false;
   console.log("idUser: "+idUser+", idExam:"+idExam);
 
 //BUSCAMOS PRE-EXISTENCIA DEL USUARIO CREADOR DE EXAMENES
-ExamReportByUser.find({'user_ppal_id':idUser}, 'id user_ppal_id exam_design_id user_submitted_exam',function(err, result) {
-  if (err) {return console.log(err);}
-  else{
-    if(result.length > 0){//EXISTE EL USUARIO
+const updateExamReport = await ExamReportByUser.find({'user_ppal_id':idUser}, 'id user_ppal_id exam_design_id user_submitted_exam').catch((error) => {
+  return console.log(error);
+});
+  if(updateExamReport.length > 0){
+    //EXISTE EL USUARIO
       console.log("###### EXISTE EL USUARIO #######");
-
-
       //BUSCAMOS PRE-EXISTENCIA DEL EXAMEN
-    ExamReportByUser.find({'user_ppal_id':idUser}, {'exams_created': {$elemMatch:{'exam_design_id': idExam}}}, 'id user_ppal_id exam_design_id user_submitted_exam',function(err, result) {
-    if (err) {return console.log(err);}
-      else{
-        if(result.length > 0){//EXISTE EL EXAMEN
+    const updateExamReportFindByUser = await ExamReportByUser.find({'user_ppal_id':idUser}, {'exams_created': {$elemMatch:{'exam_design_id': idExam}}}, 'id user_ppal_id exam_design_id user_submitted_exam').catch((error) => { 
+      return console.log(error);
+    });
+        if(updateExamReportFindByUser.length > 0){//EXISTE EL EXAMEN
           console.log("###### EXISTE EL EXAMEN #######");
-          try{
-  
-             console.log(dataBody);
-             ExamReportByUser.update({'user_ppal_id':idUser},{'exams_created': {$elemMatch:{'exam_design_id': idExam}}}, {$push: {'user_submitted_exam': dataBody} }, function (err, numberAffected) {
-                if (err) return console.log(err);
+             const updateExamReportExist = await ExamReportByUser.update({'user_ppal_id':idUser},{'exams_created': {$elemMatch:{'exam_design_id': idExam}}}, {$push: {'user_submitted_exam': dataBody} }).catch((error) => { 
+              console.log(error);
+              return res.send(500);
+            });
                 console.log("Updated reportes en examen número: "+idExam);
                 return res.send(202);
-            });
-            
-            }catch(err){console.log(err);
-            return res.send(500);}
 
  
           }else{//NO EXISTE EL EXAMEN 
@@ -94,21 +90,15 @@ ExamReportByUser.find({'user_ppal_id':idUser}, 'id user_ppal_id exam_design_id u
           
           console.log(dataBodyStringify);
           dataBody = JSON.parse(dataBodyStringify);
-
-           try{
   
-             ExamReportByUser.update({'user_ppal_id':idUser}, {$push: dataBody }, function (err, numberAffected) {
-                if (err) return console.log(err);
+             const updateExamReportByUser = await ExamReportByUser.update({'user_ppal_id':idUser}, {$push: dataBody }).catch((error) => { 
+              console.log(error);
+              return res.send(500);
+              });
                 console.log("Updated reportes en examen número: "+idExam);
                 return res.send(202);
-            });
-            
-            }catch(err){console.log(err);
-            return res.send(500);}
 
             }
-      }
-      });
       
 
     }else{//NO EXISTE EL USUARIO
@@ -121,10 +111,11 @@ ExamReportByUser.find({'user_ppal_id':idUser}, 'id user_ppal_id exam_design_id u
              console.log("Data cambiada:"+dataBody);
 
              // SE CREA EL USUARIO EN LA TABLA DE REPORTES JUNTO CON LA DATA ADJUNTA
-             ExamReportByUser.create(dataBody, function (err, result) {
-                  if (err) return console.log(err);
-                  return res.send(result);
+             const createUserWithData = await ExamReportByUser.create(dataBody).catch((error) => { 
+              console.log(error);
+              return res.send(500);
              });
+             return res.send(createUserWithData);
              /*ExamReportByUser.update({'user_ppal_id':idUser}, {$push: dataBody}, function (err, numberAffected) {
                 if (err) return console.log(err);
                 console.log("Updated reportes en examen número: "+idExam);
@@ -136,7 +127,6 @@ ExamReportByUser.find({'user_ppal_id':idUser}, 'id user_ppal_id exam_design_id u
 
     }
   }
-  });
     
     /*if(flagExisteUsuario){ // SOLO SI EXISTE EL USUARIO ENTRA EN ESTE BLOQUE
 
@@ -182,13 +172,14 @@ ExamReportByUser.find({'user_ppal_id':idUser}, 'id user_ppal_id exam_design_id u
 
 }//FIN EXISTE EL USUARIO EN LA TABLA DE REPORTES
 */
-};
 
 
 //FUNCION DE ELIMINAR EXAMENES EN LA APLICACION POR USER_ID
-exports.delete = function(req, res) {
+exports.delete = async function(req, res) {
 var id = req.params.id;
-  ExamReportByUser.remove({'user_id':id},function(result) {
-    return res.send(result);
+  const deleteExamByUserId = await ExamReportByUser.remove({'user_id':id}).catch((error) => { 
+   console.log(error);
+   return res.send(500);
   });
+  return res.send(deleteExamByUserId);
 };

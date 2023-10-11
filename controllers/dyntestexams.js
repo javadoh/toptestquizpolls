@@ -8,26 +8,26 @@ var fs = require('fs');
 var ExamConfuserTest = require('.././models/dyn_exam_conf_user');
 
 //FUNCION DE ENCONTRAR TODOS LOS USUARIOS EN LA APLICACION
-exports.findAll = function(req, res){
+exports.findAll = async function(req, res){
   console.log("Entro en controllers dyntestexams.js");
-  ExamConfuserTest.find({},'user_id exam_conf', function(err, results){
-  if (err) return console.log(err);
-  return res.send(results);
-});
+  const findAllExams = await ExamConfuserTest.find({},'user_id exam_conf').catch((error) => { 
+  return console.log(error);
+  });
+  return res.send(findAllExams);
 
 };
 
 //FUNCION DE ENCONTRAR EXAMENES POR USER_ID EN LA APLICACION
-exports.findById = function(req, res) {
+exports.findById = async function(req, res) {
  var id = req.params.id;
-  ExamConfuserTest.findOne({'user_id':id},'user_id exam_conf',function(err, result) {
-  if (err) return console.log(err);
-    return res.send(result);
+  const findExamById = await ExamConfuserTest.findOne({'user_id':id},'user_id exam_conf').catch((error) => { 
+  return console.log(error);
   });
+    return res.send(findExamById);
 };
 
 //FUNCION DE ACTUALIZAR DATOS DE EXAMENES EN LA APLICACION
-exports.update = function(req, res) {
+exports.update = async function(req, res) {
 //TEST CON CURL ---> $ curl -i -X PUT -H 'Content-Type: application/json' -d '{"band": "BBQ Brawlers"}' http://localhost:3001/musicians/535fe13ac688500000c2b28b
 var id = req.params.id;
   var dataBody = req.body;
@@ -37,49 +37,47 @@ var id = req.params.id;
       console.log('Updated %d usuarios', numberAffected);
       return res.send(202);
   });*/
-  
-  try{
-  
-   ExamConfuserTest.update({'user_id':id}, {$push: {'exam_conf': dataBody} }, function (err, numberAffected) {
-      if (err) return console.log(err);
-      console.log("Updated usuario: "+id+", con data: "+dataBody+"...... ", numberAffected);
+   const updateExamUserConf = await ExamConfuserTest.update({'user_id':id}, {$push: {'exam_conf': dataBody} }).catch((error) => { 
+      return console.log(error);
+    });
+      console.log("Updated usuario: "+id+", con data: "+dataBody+"...... ", updateExamUserConf);
       return res.send(202);
-  });
   
-  }catch(err){console.log(err);}
 };
 
 //FUNCION DE AGREGAR EXAMENES A LA APLICACION
-exports.add = function (req, res){
+exports.add = async function (req, res){
 //TEST CON CURL ---> curl -i -X POST -H 'Content-Type: application/json' -d '{"name": "Joe", "band": "Abita Boys", "instrument":"voice"}' http://localhost:3001/musicians
 
-	ExamConfuserTest.create(req.body, function (err, result) {
-    if (err) return console.log(err);
-    return res.send(result);
+	const addExam = await ExamConfuserTest.create(req.body).catch((error) => { 
+    return console.log(error);
   });
-  
+    return res.send(addExam);
 };
 
 //FUNCION DE ELIMINAR EXAMENES EN LA APLICACION POR USER_ID
-exports.delete = function(req, res) {
+exports.delete = async function(req, res) {
 var id = req.params.id;
-  ExamConfuserTest.remove({'user_id':id},function(result) {
-    return res.send(result);
+  const deleteExamByUserId = await ExamConfuserTest.remove({'user_id':id}).catch((error) => { 
+    console.log(error);
+    return res.send(500);
   });
+    return res.send(deleteExamByUserId);
 };
 
 //FUNCION PARA ENCONTRAR EL ARRAY DE EXAMEN CON MAYOR CANTIDAD DE PREGUNTAS PARA LA SECCION DE REPORTES
-exports.getMaxQuestionSizeByUser = function(req, res) {
+exports.getMaxQuestionSizeByUser = async function(req, res) {
 	var idUser = req.params.id;
 	console.log("getMaxQuestionSize -> idUser: "+idUser);
-ExamConfuserTest.aggregate( [
+const getMaxExamQuestionsForReports = await ExamConfuserTest.aggregate( [
   { $match: { "user_id": idUser }}, 
   { $group : { "_id" : "$_id" , "maxPreguntas" : { "$max" : "$exam_conf.exam_current_config.questions.id"} , "minPreguntas" : { "$min" : "$exam_conf.exam_current_config.questions.id"}}}
-] ,
-function(err, result) {
-        console.log(result);
-
+]).catch((error) => { 
+        console.log(error);
+        return res.send(500);
 });
+  console.log(getMaxExamQuestionsForReports);
+  return res.send(getMaxExamQuestionsForReports);
 };
 
 //FUNCION QUE COPIA LAS IMAGENES RECIBIDAS EN BASE64 A LA CARPETA PREDETERMINADA DEL SERVIDOR
@@ -92,7 +90,9 @@ console.log("userLogin: "+userLogin+", title: "+dataBody.examtitle+",imgList64: 
 //CAPTURA DEL TITULO DESDE EL JSON
 var examTitle = dataBody.examtitle;
 //PATH PREDEFINIDO PARA CARGA DE IMAGENES DE EXAMENES INCLUYENDO EL USUARIO POR PARAMETRO
-var serverImagesPath = "./../portal_pitutos/landings/topquiztestpoll/content/"+userLogin;
+
+
+var serverImagesPath = "./../../portal/landings/topquiztestpoll/content/"+userLogin;
 
 try{
 if (!fs.existsSync(serverImagesPath)){
